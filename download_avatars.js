@@ -1,3 +1,4 @@
+var args = process.argv.splice(2);
 var request = require('request');
 var fs = require('fs');
 var getToken= require('./secrets');
@@ -20,42 +21,39 @@ function getRepoContributors(repoOwner, repoName, cb) {
   });
 }
 
-function downloadImageByURL(url,filePath) {
-
-  // for (let index = 0; index < urlArray.length; index++) {
+function downloadImageByURL(url,filePath,currentFile) {
+  
     request.get(url)      
     .on('error', function (err) { 
-      if(err)
-      {
+      if(err){
        throw err;
-      }
-      else{
+      }else{
         console.log("Contacting the server...")
-      }                                
-       
+      }                                   
     })
     .on('response', function (response) { 
-      
       response.on('end',function(){
-        console.log('Download Completed');
+        console.log('Downloaded Image[ ' + (currentFile+1) + ' ]');
       } )
 
      })
-    .pipe(fs.createWriteStream("avatar/"+filePath+".png")); 
-    
-  //}
-  
+    .pipe(fs.createWriteStream("avatars/"+filePath+".png")); 
 }
 
 
-getRepoContributors("jquery", "jquery", function(err, result, downloadImageCb) {
-  
+getRepoContributors(args[0], args[1], function(err, result, downloadImageCb) {
+  if(args.length <= 1 || args.length >= 3){
+    console.log("Please add EXACTLY 2 arguments [repoOwner][repoName]")
+    return null;
+  };
+  if (!fs.existsSync("avatars/")){
+    fs.mkdirSync("avatars/");
+  }
   console.log("Errors:", err);
   arrayOfContributorsObj = JSON.parse(result);
-  arrayOfContributorsObj.forEach(function(contributor){
-    downloadImageCb(contributor.avatar_url, contributor.login);
+  console.log(arrayOfContributorsObj.length + " files to be downloaded" );
+  arrayOfContributorsObj.forEach(function(contributor,i){
+  downloadImageCb(contributor.avatar_url, contributor.login,i);
   }
 );
-}
-
-);
+});
